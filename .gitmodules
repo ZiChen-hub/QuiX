@@ -1,0 +1,4 @@
+[submodule "quix-client/third_party/ZeroTierOne"]
+	path = quix-client/third_party/ZeroTierOne
+	url = https://github.com/zerotier/ZeroTierOne
+	branch = dev

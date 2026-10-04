@@ -1,0 +1,29 @@
+# QuiX 服务端配置文件
+# 将此文件重命名为 config.toml 并放在可执行文件同目录
+
+# 监听端口
+port = 4433
+
+# 文件接收目录
+output_dir = "./received"
+
+# 最大并发流数（建议 4-16，默认8）
+max_concurrent_streams = 8
+
+# 每块大小（字节，建议 4MB = 4194304）
+chunk_size = 4194304
+
+# 是否启用 mDNS 设备发现
+enable_mdns = true
+
+# 是否启用跨网络传输（默认关闭）
+enable_cross_network = false
+
+# ZeroTier 网络ID（自动模式留空，手动模式填写）
+zerotier_network_id = ""
+
+# ZeroTier Central API Token（账号登录模式使用）
+zerotier_api_token = ""
+
+# 连接超时（秒）
+connection_timeout = 30

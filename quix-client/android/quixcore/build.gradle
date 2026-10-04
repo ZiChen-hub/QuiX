@@ -1,0 +1,56 @@
+// QuiX Rust core native library module.
+// Builds the quix-server cdylib (libquix_core.so) for Android via cargokit,
+// reusing the cargokit vendored with third_party/flutter_quic.
+
+group 'com.quix.quixcore'
+version '1.0'
+
+buildscript {
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        // The Android Gradle Plugin knows how to build native code with the NDK.
+        classpath 'com.android.tools.build:gradle:7.3.0'
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    if (project.android.hasProperty("namespace")) {
+        namespace 'com.quix.quixcore_native'
+    }
+
+    compileSdkVersion 36
+
+    ndkVersion "27.0.12077973"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+}
+
+apply from: "../../third_party/flutter_quic/cargokit/gradle/plugin.gradle"
+cargokit {
+    manifestDir = "../../../quix-server"
+    libname = "quix_core"
+}

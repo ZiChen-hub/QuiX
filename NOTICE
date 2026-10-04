@@ -1,0 +1,32 @@
+QuiX — 第三方组件与许可声明（NOTICE）
+=====================================
+
+QuiX 是非商业用途的开源项目。本文件列出项目中随附或引用的第三方组件及其许可信息。
+
+1. ZeroTier 核心（Windows 端内嵌静态库 quix_ztcore）
+   - 来源：https://github.com/zerotier/ZeroTierOne （源码位于 quix-client/third_party/ZeroTierOne）
+   - 许可：Business Source License 1.1（BSL 1.1，随附于 third_party/ZeroTierOne/LICENSE.txt）
+   - 说明：以未修改的 node/*.cpp 与 osdep/OSUtils.cpp 编译为静态库，
+     经 Rust FFI（quix-server/src/ztembed）调用。BSL 1.1 允许非生产性
+     （非商业）使用；QuiX 按非商业用途分发。
+
+2. ZeroTier Android SDK / JNI 核心（zerotiercore 模块）
+   - 来源：同上（ZeroTierOne 仓库 android 分支的 SDK 部分）
+   - 许可：BSL 1.1（非商业使用）
+
+3. ZerotierFix（Android 端 VpnService/TUN 适配层）
+   - 来源：https://github.com/kaaass/ZerotierFix
+   - 许可：GPL-2.0（模块内随附 LICENSE 全文）
+   - 说明：android/zerotiercore/src/main/java/com/quix/zerotier/ 下的
+     TunTapAdapter.java、ZeroTierOneService.java 等文件衍生自该项目的
+     同名源码，文件头均保留原始声明。
+
+4. Wintun（Windows TUN 虚拟网卡驱动与 wintun.dll）
+   - 来源：https://www.wintun.net （随附于 quix-server/native/wintun/）
+   - 版权：Copyright (c) 2018-2021 WireGuard LLC
+   - 许可：Prebuilt Binaries License（随附于 native/wintun/LICENSE.txt）
+   - 说明：仅通过随附 wintun.h 的 Permitted API 调用，符合其再分发条款。
+
+5. 其他 Rust / Dart 依赖（tokio、quinn、flutter 等）
+   - 均为各自仓库下的 MIT / Apache-2.0 / BSD 等宽松许可，详见各依赖清单
+     （Cargo.lock / pubspec.lock）。

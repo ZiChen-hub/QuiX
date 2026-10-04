@@ -1,0 +1,35 @@
+// QuiX ZeroTier embedded-core native library module.
+// Compiles the official ZeroTierOne core (third_party/ZeroTierOne, BSL 1.1)
+// into libZeroTierOneJNI.so for Android via NDK + CMake.
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'com.quix.zerotiercore'
+    compileSdk 36
+    ndkVersion "27.0.12077973"
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    defaultConfig {
+        minSdk 21
+
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_static"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "cmake/CMakeLists.txt"
+        }
+    }
+}

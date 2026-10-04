@@ -1,0 +1,66 @@
+name: quix_client
+description: QuiX 极速文件传输客户端
+version: 1.6.3
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # QUIC 客户端（基于 quinn 的绑定，本地 vendor 版：已修复运行时/空闲超时问题）
+  flutter_quic:
+    path: third_party/flutter_quic
+  # 状态管理
+  provider: ^6.1.1
+  # 跨平台扫码（vendor 版：已修复 AGP 9 兼容性 namespace/JVM target）
+  qr_code_scanner:
+    path: third_party/qr_code_scanner
+  # 跨平台文件选择（vendor 版：已修复 compileSdk 36）
+  file_picker:
+    path: third_party/file_picker
+  # 获取应用目录
+  path_provider: ^2.1.0
+  # 生成 UUID（文件标识）
+  uuid: ^4.3.3
+  # BLAKE3 完整性校验
+  blake3_dart: ^1.0.0
+  # 运行时权限（Android 自定义接收目录需"所有文件访问"权限）
+  permission_handler: ^11.3.1
+  # 打开外部链接（ZeroTier 应用商店页）
+  url_launcher: ^6.3.1
+  # 本地存储
+  shared_preferences: ^2.2.0
+  # FFI（调用 Rust 服务端动态库）
+  ffi: ^2.1.0
+  # 二维码生成（接收模式展示连接二维码）
+  qr_flutter: ^4.1.0
+  # 桌面端文件拖拽发送（vendor 版：已修复 compileSdk 33→36）
+  desktop_drop:
+    path: third_party/desktop_drop
+  # 手机端 ZeroTier SDK（版本需按实际发布版本确认）
+  # zero_tier_sdk: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+dependency_overrides:
+  # flutter_quic 1.0.0 按 flutter_rust_bridge 2.11.1 生成代码，
+  # 固定运行时版本避免 codegen 版本不一致导致启动崩溃
+  flutter_rust_bridge: 2.11.1
+
+flutter:
+  uses-material-design: true
+
+# Windows MSIX 安装包配置（`dart run msix:create` 打包）
+msix_config:
+  display_name: QuiX
+  publisher_display_name: QuiX
+  identity_name: com.quix.client
+  msix_version: 1.6.3.0
+  capabilities: internetClient, internetClientServer
+  build_windows: false
+  install_certificate: false

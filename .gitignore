@@ -1,0 +1,39 @@
+# ===== Rust (quix-server) =====
+quix-server/target/
+quix-server/config.toml
+quix-server/received/
+quix-server/*.log
+
+# ===== Flutter / Dart =====
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# ===== Android =====
+quix-client/android/local.properties
+quix-client/android/.gradle/
+quix-client/android/.cxx/
+quix-client/android/.kotlin/
+
+# ===== Vendored plugin build caches =====
+quix-client/third_party/flutter_quic/rust/target/
+
+# ===== Build outputs =====
+build/
+dist/
+
+# ===== Logs & local state =====
+*.log
+.dart-state/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.iml

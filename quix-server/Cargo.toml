@@ -1,0 +1,66 @@
+[package]
+name = "quix-server"
+version = "1.0.0"
+edition = "2021"
+description = "QuiX 极速文件传输服务端"
+
+[lib]
+name = "quix_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# QUIC 传输层
+quinn = "0.10"
+# 异步运行时
+tokio = { version = "1.40", features = ["full"] }
+# 错误处理
+anyhow = "1.0"
+thiserror = "1.0"
+# TLS 证书生成与 QUIC 使用的 rustls 版本
+rcgen = "0.11"
+rustls = { version = "0.21", features = ["dangerous_configuration"] }
+# 字节缓冲
+bytes = "1.5"
+# 完整性校验
+blake3 = "1.5"
+# 证书指纹（SHA256）
+sha2 = "0.10"
+# 序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# 配置文件解析
+toml = "0.8"
+# 局域网设备发现
+mdns-sd = "0.10"
+# 二维码生成
+qrcode = "0.13"
+image = "0.24"
+# 日志
+tracing = "0.1"
+tracing-subscriber = "0.3"
+# 命令行参数
+clap = { version = "4.5", features = ["derive"] }
+# 获取本机 IP / 主机名
+local-ip-address = "0.6"
+hostname = "0.3"
+# UPnP 端口映射
+igd-next = { version = "0.14", features = ["aio_tokio"] }
+# ZeroTier Central API 调用
+# 关闭默认 native-tls（Android 无 OpenSSL），改用纯 Rust 的 rustls，桌面端同样可用
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+
+# Windows 专用：内嵌 ZeroTier 核心 + Wintun 虚拟网卡（其他平台不引入）
+[target.'cfg(windows)'.dependencies]
+# Wintun 安全封装（wintun.dll 随仓库分发，见 native/wintun/x64）
+wintun = "0.5"
+# Windows IP Helper / WinSock API（网卡地址、路由配置）
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_Networking_WinSock",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_NetworkManagement_Ndis",
+] }
+
+[target.'cfg(windows)'.build-dependencies]
+# 构建 ZeroTier 核心静态库
+cmake = "0.1"
