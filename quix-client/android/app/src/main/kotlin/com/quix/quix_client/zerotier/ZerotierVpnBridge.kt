@@ -10,8 +10,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import com.quix.zerotier.ZeroTierOneService
-import com.zerotier.sdk.VirtualNetworkStatus
+import com.quix.zerotier.IZeroTierCallback
+import com.quix.zerotier.IZeroTierService
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -27,6 +27,8 @@ import java.util.concurrent.Executors
  *  - joinAndWaitIp({networkId: 16位十六进制})：VPN 授权 → 启动/绑定服务 → join → 返回分配的 IPv4
  *  - stop()：停止 VPN 服务并解绑
  *  - isRunning()：服务是否已绑定运行
+ *
+ * 注意：本文件不直接 import 任何 GPL 代码，通过 AIDL 与 :zerotier 进程通信。
  */
 class ZerotierVpnBridge(
     private val activity: Activity,
@@ -36,6 +38,9 @@ class ZerotierVpnBridge(
     companion object {
         const val CHANNEL_NAME = "quix/zerotier_vpn"
         private const val VPN_REQUEST_CODE = 0xA71E // 42782
+
+        // AIDL 网络状态码（与 ZeroTierOne.h 中 ZT_VirtualNetworkStatus 一致）
+        private const val STATUS_OK = 1
     }
 
     private sealed class ZtEvent {
@@ -49,7 +54,7 @@ class ZerotierVpnBridge(
     private val eventQueue = ArrayBlockingQueue<ZtEvent>(8)
 
     @Volatile
-    private var service: ZeroTierOneService? = null
+    private var service: IZeroTierService? = null
     private var bound = false
 
     private var consentLatch: CountDownLatch? = null
@@ -57,30 +62,31 @@ class ZerotierVpnBridge(
     private var consentGranted = false
     private var bindLatch: CountDownLatch? = null
 
+    private val aidlCallback = object : IZeroTierCallback.Stub() {
+        override fun onNodeUp(nodeAddress: Long) {
+            // 当前业务不需要
+        }
+
+        override fun onNetworkStatus(networkId: Long, status: Int, assignedIp: String?) {
+            if (status == STATUS_OK && !assignedIp.isNullOrEmpty()) {
+                eventQueue.offer(ZtEvent.IpAssigned(assignedIp))
+            }
+        }
+
+        override fun onFatalError(message: String?) {
+            eventQueue.offer(ZtEvent.Fatal(message ?: "ZeroTier 服务发生错误"))
+        }
+    }
+
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-            val ztBinder = binder as? ZeroTierOneService.ZeroTierBinder ?: return
-            val s = ztBinder.service
+            val s = IZeroTierService.Stub.asInterface(binder) ?: return
             service = s
-            s.setStatusListener(object : ZeroTierOneService.StatusListener {
-                override fun onNodeUp(nodeAddress: Long) {
-                    // 当前业务不需要
-                }
-
-                override fun onNetworkStatus(
-                    networkId: Long,
-                    status: VirtualNetworkStatus?,
-                    assignedIp: String?
-                ) {
-                    if (status == VirtualNetworkStatus.NETWORK_STATUS_OK && !assignedIp.isNullOrEmpty()) {
-                        eventQueue.offer(ZtEvent.IpAssigned(assignedIp))
-                    }
-                }
-
-                override fun onFatalError(message: String?) {
-                    eventQueue.offer(ZtEvent.Fatal(message ?: "ZeroTier 服务发生错误"))
-                }
-            })
+            try {
+                s.setCallback(aidlCallback)
+            } catch (e: Exception) {
+                // 服务已死亡或 IPC 失败
+            }
             bindLatch?.countDown()
         }
 
@@ -115,9 +121,13 @@ class ZerotierVpnBridge(
             eventQueue.clear()
             // 1. VPN 授权
             ensureVpnConsent()
-            // 2. 启动并绑定服务
-            val intent = Intent(activity, ZeroTierOneService::class.java).apply {
-                putExtra(ZeroTierOneService.EXTRA_NETWORK_ID, nwid)
+            // 2. 启动并绑定服务（通过显式 Intent 指定 :zerotier 进程中的组件）
+            val intent = Intent().apply {
+                component = ComponentName(
+                    activity.packageName,
+                    "com.quix.zerotier.ZeroTierOneService"
+                )
+                putExtra("com.quix.zerotier.network_id", nwid)
             }
             startService(intent)
             ensureBound(intent)
@@ -163,7 +173,12 @@ class ZerotierVpnBridge(
                 // 未绑定等异常忽略
             }
             try {
-                activity.stopService(Intent(activity, ZeroTierOneService::class.java))
+                activity.stopService(Intent().apply {
+                    component = ComponentName(
+                        activity.packageName,
+                        "com.quix.zerotier.ZeroTierOneService"
+                    )
+                })
             } catch (e: Exception) {
                 // 忽略
             }

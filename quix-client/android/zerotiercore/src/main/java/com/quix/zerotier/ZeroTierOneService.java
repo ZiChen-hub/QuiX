@@ -60,7 +60,6 @@ public class ZeroTierOneService extends VpnService
     private static final String VPN_SESSION_NAME = "QuiX ZeroTier";
     private static final String[] DISALLOWED_APPS = {"com.android.vending"};
 
-    private final IBinder mBinder = new ZeroTierBinder();
     private final DataStore dataStore = new DataStore(this);
     private final Map<Long, VirtualNetworkConfig> virtualNetworkConfigMap = new HashMap<>();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -78,35 +77,35 @@ public class ZeroTierOneService extends VpnService
     FileInputStream in;
     FileOutputStream out;
     private NotificationManager notificationManager;
-    private volatile StatusListener statusListener;
+    private volatile IZeroTierCallback statusListener;
 
-    /**
-     * 节点与网络状态回调（回调均在主线程触发）
-     */
-    public interface StatusListener {
-        /** 节点初始化完成，返回本节点 10 位地址 */
-        void onNodeUp(long nodeAddress);
+    // ---- AIDL 跨进程接口实现 ----
 
-        /** 网络状态变化；authorized 且已分配地址时 assignedIp 为首个 IPv4 地址，否则为 null */
-        void onNetworkStatus(long networkId, VirtualNetworkStatus status, String assignedIp);
-
-        /** 致命错误，服务即将停止 */
-        void onFatalError(String message);
-    }
-
-    public class ZeroTierBinder extends Binder {
-        public ZeroTierOneService getService() {
-            return ZeroTierOneService.this;
+    private final IZeroTierService.Stub mBinder = new IZeroTierService.Stub() {
+        @Override
+        public void joinNetwork(long networkId) {
+            ZeroTierOneService.this.joinNetwork(networkId);
         }
-    }
 
-    public void setStatusListener(StatusListener listener) {
-        this.statusListener = listener;
-    }
+        @Override
+        public void leaveNetwork(long networkId) {
+            ZeroTierOneService.this.leaveNetwork(networkId);
+        }
+
+        @Override
+        public void stopZeroTier() {
+            ZeroTierOneService.this.stopZeroTier();
+        }
+
+        @Override
+        public void setCallback(IZeroTierCallback callback) {
+            ZeroTierOneService.this.statusListener = callback;
+        }
+    };
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(TAG, "Bound");
+        Log.d(TAG, "Bound (AIDL)");
         return mBinder;
     }
 
@@ -628,9 +627,13 @@ public class ZeroTierOneService extends VpnService
 
     private void notifyNodeUp(long nodeAddress) {
         mainHandler.post(() -> {
-            StatusListener listener = statusListener;
+            IZeroTierCallback listener = statusListener;
             if (listener != null) {
-                listener.onNodeUp(nodeAddress);
+                try {
+                    listener.onNodeUp(nodeAddress);
+                } catch (Exception e) {
+                    Log.e(TAG, "notifyNodeUp callback failed", e);
+                }
             }
         });
     }
@@ -640,21 +643,49 @@ public class ZeroTierOneService extends VpnService
     }
 
     private void notifyNetworkStatus(long nwid, VirtualNetworkStatus status, String ip) {
+        final int statusCode = statusToInt(status);
         mainHandler.post(() -> {
-            StatusListener listener = statusListener;
+            IZeroTierCallback listener = statusListener;
             if (listener != null) {
-                listener.onNetworkStatus(nwid, status, ip);
+                try {
+                    listener.onNetworkStatus(nwid, statusCode, ip);
+                } catch (Exception e) {
+                    Log.e(TAG, "notifyNetworkStatus callback failed", e);
+                }
             }
         });
     }
 
     private void notifyFatal(String message) {
         mainHandler.post(() -> {
-            StatusListener listener = statusListener;
+            IZeroTierCallback listener = statusListener;
             if (listener != null) {
-                listener.onFatalError(message);
+                try {
+                    listener.onFatalError(message);
+                } catch (Exception e) {
+                    Log.e(TAG, "notifyFatal callback failed", e);
+                }
             }
         });
+    }
+
+    /**
+     * 将 SDK 枚举转为 AIDL 传输用的 int（与 ZeroTierOne.h 中 ZT_VirtualNetworkStatus 一致）
+     */
+    private static int statusToInt(VirtualNetworkStatus status) {
+        if (status == null) {
+            return -1;
+        }
+        switch (status) {
+            case NETWORK_STATUS_REQUESTING_CONFIGURATION: return 0;
+            case NETWORK_STATUS_OK:                       return 1;
+            case NETWORK_STATUS_ACCESS_DENIED:            return 2;
+            case NETWORK_STATUS_NOT_FOUND:                return 3;
+            case NETWORK_STATUS_PORT_ERROR:               return 4;
+            case NETWORK_STATUS_CLIENT_TOO_OLD:           return 5;
+            case NETWORK_STATUS_AUTHENTICATION_REQUIRED:  return 6;
+            default:                                      return -1;
+        }
     }
 
     private static String firstIpv4(VirtualNetworkConfig config) {

@@ -11,6 +11,7 @@ android {
 
     buildFeatures {
         buildConfig true
+        aidl true
     }
 
     defaultConfig {
@@ -30,6 +31,31 @@ android {
     externalNativeBuild {
         cmake {
             path "cmake/CMakeLists.txt"
+        }
+    }
+}
+
+// Fix AIDL-generated Java files: replace non-ASCII user path with ASCII
+// to avoid "unmappable character for encoding UTF-8" on Windows with
+// non-English user profile directory.
+tasks.whenTaskAdded { task ->
+    if (task.name == 'compileDebugJavaWithJavac' || task.name == 'compileReleaseJavaWithJavac') {
+        task.doFirst {
+            def aidlDir = new File(buildDir, "generated/aidl_source_output_dir")
+            aidlDir.eachFileRecurse { file ->
+                if (file.name.endsWith('.java')) {
+                    def text = file.getText('UTF-8')
+                    // Replace any non-ASCII characters in comment lines with '?'
+                    def fixed = text.readLines().collect { line ->
+                        if (line.startsWith(' *') || line.startsWith('/*') || line.startsWith('//')) {
+                            line.replaceAll(/[^\x00-\x7F]/, '?')
+                        } else {
+                            line
+                        }
+                    }.join('\n')
+                    file.setText(fixed, 'UTF-8')
+                }
+            }
         }
     }
 }

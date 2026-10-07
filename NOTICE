@@ -21,6 +21,12 @@ QuiX 是非商业用途的开源项目。本文件列出项目中随附或引用
      TunTapAdapter.java、ZeroTierOneService.java 等文件衍生自该项目的
      同名源码，文件头均保留原始声明。
 
+   GPL 隔离说明：
+   ZerotierFix 衍生代码与 ZeroTier SDK（GPL-3.0）运行于独立的
+   `:zerotier` Android 进程，主进程（MIT 许可）通过 AIDL IPC 与其通信，
+   实现进程级 GPL 隔离。AIDL 接口定义位于：
+   android/zerotiercore/src/main/aidl/com/quix/zerotier/
+
 4. Wintun（Windows TUN 虚拟网卡驱动与 wintun.dll）
    - 来源：https://www.wintun.net （随附于 quix-server/native/wintun/）
    - 版权：Copyright (c) 2018-2021 WireGuard LLC

@@ -17,11 +17,12 @@
         android:label="QuiX"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        <!-- 内嵌 ZeroTier 节点的 VPN 服务 -->
+        <!-- 内嵌 ZeroTier 节点的 VPN 服务（运行于独立 :zerotier 进程，实现 GPL 隔离） -->
         <service
             android:name="com.quix.zerotier.ZeroTierOneService"
             android:enabled="true"
             android:exported="false"
+            android:process=":zerotier"
             android:foregroundServiceType="specialUse"
             android:permission="android.permission.BIND_VPN_SERVICE">
             <intent-filter>
