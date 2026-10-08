@@ -196,6 +196,6 @@ cargo test
 项目内嵌/引用的第三方组件具有不同许可，详见 [NOTICE](NOTICE)：
 
 - **ZeroTier 核心**：Business Source License 1.1（BSL 1.1，非商业使用）
-- **ZerotierFix**（Android VpnService 适配层）：GPL-2.0
+- **ZerotierFix**（Android VpnService 适配层）：GPL-2.0 —— 其衍生代码与 ZeroTier Android SDK 运行于独立的 `:zerotier` 进程，主进程（MIT）仅通过 AIDL IPC 与其通信，实现进程级 GPL 隔离
 - **Wintun**：WireGuard LLC 预编译二进制许可
 - 其余 Rust / Dart 依赖为 MIT / Apache-2.0 / BSD 等宽松许可
