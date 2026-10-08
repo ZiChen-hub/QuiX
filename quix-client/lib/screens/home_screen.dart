@@ -174,31 +174,40 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: provider.isConnected ? success : Colors.white30,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    provider.connectionType,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withOpacity(0.7),
+                  Flexible(
+                    child: Text(
+                      provider.connectionType,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
                     ),
                   ),
                   const Spacer(),
                   // 扫码连接入口（仅移动端；扫码解析到信息后立即隐藏，
                   // 桌面端无摄像头扫码插件，不显示）
+                  // 仅图标按钮：顶栏空间紧张，避免文字导致横向溢出
                   if ((Platform.isAndroid || Platform.isIOS) &&
                       !_scanConsumed)
-                    TextButton.icon(
+                    IconButton(
                       onPressed: _scanAndConnect,
                       icon: const Icon(Icons.qr_code_scanner,
-                          size: 18, color: QxColors.primary),
-                      label: const Text(
-                        '扫码',
-                        style: TextStyle(color: QxColors.primary, fontSize: 13),
-                      ),
+                          size: 20, color: QxColors.primary),
+                      tooltip: '扫码连接',
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(
+                          minWidth: 36, minHeight: 36),
                     ),
                   // 模式切换按钮：与接收模式一致，固定在右上角
+                  // FittedBox 兜底：无论段宽度如何都不会导致行溢出
                   Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Center(child: const ModeSwitch()),
+                    padding: const EdgeInsets.only(left: 4),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: const ModeSwitch(),
+                    ),
                   ),
                 ],
               ),

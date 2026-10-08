@@ -218,7 +218,10 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: Center(child: const ModeSwitch()),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: const ModeSwitch(),
+            ),
           ),
         ],
       ),
